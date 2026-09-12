@@ -1,14 +1,14 @@
 {
   "name": "hero-pink",
   "private": true,
-  "version": "1.4.1",
+  "version": "1.4.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "npm run api:gen && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "api:gen": "openapi-ts",
+    "api:gen": "openapi-ts --file api-client.config.ts",
     "theme:pack": "node scripts/package-theme.mjs",
     "theme:build": "npm run build && npm run theme:pack"
   },

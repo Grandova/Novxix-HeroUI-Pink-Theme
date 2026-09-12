@@ -33,7 +33,7 @@
 | --- | --- |
 | 显示名称 | Hero Pink |
 | 主题 ID | `hero-pink` |
-| 当前版本 | `1.4.1` |
+| 当前版本 | `1.4.2` |
 | Novaix 要求 | `~0.4.2`（`>=0.4.2` 且 `<0.5.0`） |
 | 安装包 | `hero-pink.zip` |
 
@@ -41,9 +41,19 @@
 
 版本约束不代表已验证后续所有补丁版本。本主题的 API 生成及构建基线为 Novaix **v0.4.2**；跨版本使用前应在测试面板验证。
 
+## 下载与安装
+
+无需本地构建即可安装：
+
+1. 打开 [最新 Release](https://github.com/Grandova/Novxix-HeroUI-Pink-Theme/releases/latest)。
+2. 在 **Assets** 中下载 **hero-pink.zip**，也可使用 [安装包直达链接](https://github.com/Grandova/Novxix-HeroUI-Pink-Theme/releases/latest/download/hero-pink.zip)。
+3. 在 Novaix 后台 → 主题管理中上传安装，并启用 **Hero Pink**。
+
+请下载 Release 附件中的主题包。GitHub 自动提供的 **Source code (zip / tar.gz)** 是源码，不能作为主题直接上传。Release 附件中的 **SHA256SUMS.txt** 可用于校验下载内容。
+
 ## 构建和打包
 
-需要 **Node.js 22.12+** 和 **pnpm 10**。仓库已包含 v0.4.2 的公开 OpenAPI 定义，构建不需要向你的面板索取文档或读取账号数据。
+需要 **Node.js 22.12+** 和 **pnpm 10**。仓库已包含 v0.4.2 的公开接口定义，构建不需要向你的面板索取文档或读取账号数据。
 
 ```bash
 git clone https://github.com/Grandova/Novxix-HeroUI-Pink-Theme.git
@@ -54,7 +64,7 @@ pnpm theme:build
 
 `theme:build` 会依次执行：
 
-1. 根据仓库内的 OpenAPI 定义生成 `src/api/`。
+1. 根据仓库内的 接口定义生成 `src/api/`。
 2. 执行 TypeScript 检查与 Vite 生产构建。
 3. 生成 `release/hero-pink.zip`。
 
@@ -94,12 +104,12 @@ pnpm dev
 
 ```bash
 # Bash
-OPENAPI_INPUT=/path/to/openapi.json pnpm api:gen
+API_SCHEMA_INPUT=/path/to/api-schema.json pnpm api:gen
 ```
 
 ```powershell
 # PowerShell
-$env:OPENAPI_INPUT = 'C:\path\to\openapi.json'
+$env:API_SCHEMA_INPUT = 'C:\path\to\api-schema.json'
 pnpm api:gen
 ```
 
@@ -119,7 +129,8 @@ src/
 ├── components/, hooks/, lib/ ...   # 原有功能依赖
 ├── layouts/                       # 原有布局组件
 └── api/                           # 自动生成，不提交
-openapi/novaix-v0.4.2.json          # 构建所需的公开 API 定义
+api-schema/novaix-v0.4.2.json          # 构建所需的公开 API 定义
+api-client.config.ts              # API 客户端生成配置
 scripts/package-theme.mjs          # 跨平台主题打包
 public/                           # 必需的静态资源
 theme.json                        # 主题名称、ID、版本及兼容要求
@@ -140,4 +151,4 @@ pnpm-lock.yaml                    # 固定依赖解析结果
 
 主题仓库采用 [MIT License](LICENSE)。基于 [Novaix 官方前端](https://github.com/huohuastudio/novaix-ui) 定制，原始前端版权和 MIT 许可保留在 [LICENSES/Novaix-UI.txt](LICENSES/Novaix-UI.txt)。Novaix 发布项目见 [novaix-releases](https://github.com/huohuastudio/novaix-releases)。
 
-`openapi/novaix-v0.4.2.json` 来自 Novaix v0.4.2 官方发行程序提供的公开 API 文档，用于重建 API 客户端，不包含本地面板账号、令牌或业务数据。
+`api-schema/novaix-v0.4.2.json` 来自 Novaix v0.4.2 官方发行程序提供的公开 API 文档，用于重建 API 客户端，不包含本地面板账号、令牌或业务数据。
