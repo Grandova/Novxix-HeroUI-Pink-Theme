@@ -1,0 +1,471 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
+import { Plus, Pencil, Trash2, FolderTree, Package, FlaskConical, MoreHorizontal, ArrowUpFromDot, ArrowDownToDot } from "lucide-react"
+import { toast } from "sonner"
+import { DataTable } from "@/components/data-table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  getAdminPlans,
+  deleteAdminPlansById,
+  putAdminPlansById,
+} from "@/api"
+import type { ProductPlanItem, ProductPlanGroupItem } from "@/api"
+import { getAdminPlansQueryKey } from "@/api/@tanstack/react-query.gen"
+import { useDataTable, type FetchParams } from "@/hooks/use-data-table"
+import { useConfirm } from "@/hooks/use-confirm"
+import { useBreadcrumb } from "@/hooks/use-breadcrumb"
+import { HelpLink } from "@/components/help-doc"
+import { useFormatAmount } from "@/hooks/use-site-settings"
+import { getErrorMessage } from "@/lib/utils"
+import { EmptyState } from "@/components/empty-state"
+import PlanFormDialog from "./plan-form-dialog"
+import PlanGroupDialog from "./plan-group-dialog"
+import TrialDialog from "./trial-dialog"
+import { useQuery } from "@tanstack/react-query"
+import { getAdminPlanGroupsOptions, getAdminNodesOptions } from "@/api/@tanstack/react-query.gen"
+
+const activeBadgeClass = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+
+function EditableNumberCell({
+  planId,
+  field,
+  value,
+  min = 0,
+  onSaved,
+  renderDisplay,
+}: {
+  planId: number
+  field: "stock" | "sort_order"
+  value: number
+  min?: number
+  onSaved: () => void
+  renderDisplay?: (value: number) => React.ReactNode
+}) {
+  const [editing, setEditing] = useState(false)
+  const [inputValue, setInputValue] = useState("")
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) {
+      requestAnimationFrame(() => inputRef.current?.select())
+    }
+  }, [editing])
+
+  const startEditing = () => {
+    setInputValue(String(value))
+    setEditing(true)
+  }
+
+  const save = async () => {
+    const trimmed = inputValue.trim()
+    const num = Number(trimmed)
+    if (trimmed === "" || !Number.isInteger(num) || num < min) {
+      toast.error(`请输入不小于 ${min} 的整数`)
+      return
+    }
+    if (num === value) {
+      setEditing(false)
+      return
+    }
+    setSaving(true)
+    try {
+      const res = await putAdminPlansById({
+        path: { id: planId },
+        body: { [field]: num },
+      })
+      if (res.data?.code !== 0) {
+        toast.error(res.data?.message || "更新失败")
+      } else {
+        onSaved()
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err, "更新失败"))
+    } finally {
+      setSaving(false)
+      setEditing(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      save()
+    } else if (e.key === "Escape") {
+      setEditing(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <Input
+        ref={inputRef}
+        type="number"
+        min={min}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={handleKeyDown}
+        disabled={saving}
+        className="h-7 w-20 text-sm"
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center rounded px-1.5 py-0.5 -mx-1.5 -my-0.5 hover:bg-muted transition-colors cursor-text"
+      onClick={startEditing}
+    >
+      {renderDisplay ? renderDisplay(value) : value}
+    </button>
+  )
+}
+
+function formatResource(value: number | undefined, unit: string, zeroText = "不限") {
+  if (!value) return zeroText
+  return `${value}${unit}`
+}
+
+export default function Plans() {
+  useBreadcrumb([{ label: "套餐管理" }])
+  const formatPrice = useFormatAmount()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<ProductPlanItem | undefined>()
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false)
+  const { confirm, ConfirmDialog } = useConfirm()
+
+  // 套餐分组字典（与分组管理弹窗共享同一缓存条目，弹窗内增删改后由弹窗负责失效；查询参数须与 plan-group-dialog.tsx 保持一致）
+  const groupsQuery = useQuery(getAdminPlanGroupsOptions({ query: { page: 1, page_size: 100 } }))
+  const groups = useMemo<ProductPlanGroupItem[]>(() => groupsQuery.data?.data?.items ?? [], [groupsQuery.data])
+
+  const nodesQuery = useQuery(getAdminNodesOptions({ query: { page: 1, page_size: 500 } }))
+  const nodeRegionMap = useMemo(() => {
+    const m = new Map<number, string>()
+    for (const n of nodesQuery.data?.data?.items ?? []) {
+      if (n.id != null && n.region_display_name) m.set(n.id, n.region_display_name)
+    }
+    return m
+  }, [nodesQuery.data])
+
+  const groupNameMap = useMemo(() => {
+    const m = new Map<number, string>()
+    groups.forEach(g => { if (g.id != null) m.set(g.id, g.name ?? "") })
+    return m
+  }, [groups])
+
+  const fetchPlans = useCallback(async ({ page, pageSize, sorting, filters }: FetchParams) => {
+    const sort = sorting[0]?.id as "id" | "name" | "cpu" | "memory" | "disk" | "price_monthly" | "status" | "sort_order" | "created_at" | undefined
+    const order: "asc" | "desc" | undefined = sorting[0] ? (sorting[0].desc ? "desc" : "asc") : undefined
+
+    const { data: res } = await getAdminPlans({
+      query: {
+        page,
+        page_size: pageSize,
+        keyword: (filters.name as string) || undefined,
+        group_id: filters.group_id ? Number(filters.group_id) : undefined,
+        type: (filters.type as string) || undefined,
+        status: filters.status !== undefined && filters.status !== "" ? Number(filters.status) as 0 | 1 : undefined,
+        sort,
+        order,
+      },
+    })
+
+    return {
+      items: res?.data?.items ?? [],
+      total: res?.data?.total ?? 0,
+      page: res?.data?.page ?? 1,
+      page_size: res?.data?.page_size ?? pageSize,
+    }
+  }, [])
+
+  const table = useDataTable({
+    fetchFn: fetchPlans,
+    queryKey: getAdminPlansQueryKey(),
+    filterKeys: ["name", "status", "group_id"],
+  })
+  const refreshPlans = table.refresh
+
+  const [trialPlan, setTrialPlan] = useState<ProductPlanItem | undefined>()
+  const [trialOpen, setTrialOpen] = useState(false)
+
+  const handleCreate = () => {
+    setEditingPlan(undefined)
+    setDialogOpen(true)
+  }
+
+  const handleTrial = useCallback((plan: ProductPlanItem) => {
+    setTrialPlan(plan)
+    setTrialOpen(true)
+  }, [])
+
+  const handleEdit = useCallback((plan: ProductPlanItem) => {
+    setEditingPlan(plan)
+    setDialogOpen(true)
+  }, [])
+
+  const handleToggleStatus = useCallback(async (plan: ProductPlanItem) => {
+    const newStatus = plan.status === 1 ? 0 : 1
+    await putAdminPlansById({ path: { id: plan.id! }, body: { status: newStatus } })
+    table.refresh()
+  }, [table])
+
+  const handleDelete = useCallback(async (plan: ProductPlanItem) => {
+    const ok = await confirm({
+      title: "删除套餐",
+      description: `确定要删除套餐「${plan.name}」吗？此操作不可撤销。`,
+      confirmText: "删除",
+      destructive: true,
+    })
+    if (!ok) return
+    await deleteAdminPlansById({ path: { id: plan.id! } })
+    table.refresh()
+  }, [table, confirm])
+
+  const handleFormSuccess = () => {
+    setDialogOpen(false)
+    table.refresh()
+  }
+
+  const columns: ColumnDef<ProductPlanItem>[] = useMemo(() => [
+    {
+      accessorKey: "id",
+      header: "ID",
+      enableSorting: true,
+    },
+    {
+      accessorKey: "name",
+      header: "名称",
+      enableSorting: true,
+      meta: {
+        filterVariant: "text",
+        filterPlaceholder: "搜索套餐名称...",
+      },
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.name}</div>
+          {row.original.description && (
+            <div className="text-xs text-muted-foreground mt-0.5">{row.original.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "regions",
+      header: "区域",
+      cell: ({ row }) => {
+        const nodeIds = row.original.node_ids
+        if (!nodeIds) return <span className="text-xs text-muted-foreground">全部</span>
+        const regions = [...new Set(
+          nodeIds.split(",").map(id => nodeRegionMap.get(Number(id))).filter(Boolean)
+        )]
+        if (!regions.length) return <span className="text-muted-foreground">-</span>
+        return <span className="text-xs text-muted-foreground">{regions.join("、")}</span>
+      },
+    },
+    {
+      id: "group_id",
+      header: "分组",
+      meta: {
+        filterVariant: "select",
+        filterPlaceholder: "分组",
+        filterOptions: groups.map(g => ({ label: g.name ?? "", value: String(g.id) })),
+      },
+      cell: ({ row }) => {
+        const gid = row.original.group_id
+        const name = gid != null ? groupNameMap.get(gid) : undefined
+        return name || <span className="text-muted-foreground">-</span>
+      },
+    },
+    {
+      id: "specs",
+      header: "配置",
+      cell: ({ row }) => {
+        const p = row.original
+        return (
+          <span className="text-xs text-muted-foreground">
+            {p.cpu}C / {p.memory! >= 1024 ? `${(p.memory! / 1024).toFixed(p.memory! % 1024 === 0 ? 0 : 1)}G` : `${p.memory}M`} / {p.disk}G
+          </span>
+        )
+      },
+    },
+    {
+      id: "network",
+      header: "网络",
+      cell: ({ row }) => {
+        const p = row.original
+        return (
+          <span className="text-xs text-muted-foreground">
+            {formatResource(p.bandwidth, "Mbps")} / {formatResource(p.traffic, "GB/月")}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: "price_monthly",
+      header: "月付",
+      enableSorting: true,
+      cell: ({ row }) => formatPrice(row.original.price_monthly),
+    },
+    {
+      id: "stock",
+      header: "库存",
+      cell: ({ row }) => (
+        <EditableNumberCell
+          planId={row.original.id!}
+          field="stock"
+          value={row.original.stock ?? -1}
+          min={-1}
+          onSaved={refreshPlans}
+          renderDisplay={(v) => {
+            if (v === -1) return <span className="text-muted-foreground">不限</span>
+            if (v === 0) return <Badge variant="destructive">售罄</Badge>
+            return v
+          }}
+        />
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "状态",
+      enableSorting: true,
+      meta: {
+        filterVariant: "select",
+        filterPlaceholder: "状态",
+        filterOptions: [
+          { label: "上架", value: "1" },
+          { label: "下架", value: "0" },
+        ],
+      },
+      cell: ({ row }) => (
+        row.original.status === 1
+          ? <Badge className={activeBadgeClass}>上架</Badge>
+          : <Badge variant="secondary">下架</Badge>
+      ),
+    },
+    {
+      accessorKey: "sort_order",
+      header: "排序",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <EditableNumberCell
+          planId={row.original.id!}
+          field="sort_order"
+          value={row.original.sort_order ?? 0}
+          min={0}
+          onSaved={refreshPlans}
+        />
+      ),
+    },
+    {
+      id: "actions",
+      header: "操作",
+      cell: ({ row }) => {
+        const plan = row.original
+        return (
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => handleEdit(plan)}>
+              <Pencil className="size-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => handleToggleStatus(plan)} title={plan.status === 1 ? "下架" : "上架"}>
+              {plan.status === 1 ? <ArrowDownToDot className="size-4" /> : <ArrowUpFromDot className="size-4" />}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleTrial(plan)}>
+                  <FlaskConical className="size-4 mr-2" />
+                  试建实例
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(plan)}>
+                  <Trash2 className="size-4 mr-2" />
+                  删除套餐
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      },
+    },
+  ], [handleEdit, handleDelete, handleTrial, handleToggleStatus, formatPrice, refreshPlans, groups, groupNameMap, nodeRegionMap])
+
+  return (
+    <div className="px-6 pt-6 space-y-6">
+      <div>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">套餐管理</h1>
+          <HelpLink path="/novaix/plan" />
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">套餐定义了用户可购买的资源配置（CPU/内存/磁盘/带宽）和价格。套餐通过绑定节点组来决定在哪些节点上开通实例</p>
+      </div>
+      <DataTable
+        tourId="plan-table"
+        columns={columns}
+        data={table.data}
+        loading={table.loading}
+        fetching={table.fetching}
+        error={table.error}
+        pagination={table.pagination}
+        onPaginationChange={table.setPagination}
+        sorting={table.sorting}
+        onSortingChange={table.setSorting}
+        columnFilters={table.columnFilters}
+        onColumnFiltersChange={table.setColumnFilters}
+        toolbar={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setGroupDialogOpen(true)}>
+              <FolderTree className="size-4" />
+              分组管理
+            </Button>
+            <Button onClick={handleCreate} data-tour="plan-add-btn">
+              <Plus className="size-4" />
+              添加套餐
+            </Button>
+          </div>
+        }
+        emptyState={
+          <EmptyState
+            icon={Package}
+            title="暂无套餐"
+            description="创建套餐定义资源配置和价格，上架后用户即可购买"
+            action={{ label: "添加套餐", onClick: handleCreate }}
+          />
+        }
+      />
+      <PlanFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        plan={editingPlan}
+        onSuccess={handleFormSuccess}
+      />
+      <PlanGroupDialog
+        open={groupDialogOpen}
+        onOpenChange={setGroupDialogOpen}
+        onChanged={() => table.refresh()}
+      />
+      {trialPlan && (
+        <TrialDialog
+          open={trialOpen}
+          onOpenChange={setTrialOpen}
+          plan={trialPlan}
+        />
+      )}
+      {ConfirmDialog}
+    </div>
+  )
+}

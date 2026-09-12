@@ -1,0 +1,253 @@
+import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { Loader2 } from "lucide-react"
+import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { PaymentPending } from "@/components/payment-pending"
+import { postPortalPayments } from "@/api"
+import { getPortalPaymentMethodsOptions } from "@/api/@tanstack/react-query.gen"
+import { useFormatAmount, useSiteSettings } from "@/hooks/use-site-settings"
+import { cn, getErrorMessage } from "@/lib/utils"
+import { PaymentMethodGrid } from "@/components/payment-method-picker"
+import { calculateFee, formatFeePercent } from "@/lib/payment"
+
+const presetAmounts = [1000, 5000, 10000, 50000, 100000]
+
+export function RechargeDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
+}) {
+  const formatAmount = useFormatAmount()
+  const { recharge_min_amount } = useSiteSettings()
+  const minAmount = Math.max(100, parseInt(recharge_min_amount) || 0)
+  const [selectedProvider, setSelectedProvider] = useState("")
+  const [selectedMethod, setSelectedMethod] = useState("")
+  const [amount, setAmount] = useState<number>(0)
+  const [customAmount, setCustomAmount] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [paymentResult, setPaymentResult] = useState<{
+    paymentNo: string
+    payURL: string
+    qrCode: boolean
+    amount: number
+  } | null>(null)
+
+  // 对话框打开时才加载支付方式
+  const methodsQuery = useQuery({
+    ...getPortalPaymentMethodsOptions(),
+    enabled: open,
+  })
+  const methods = methodsQuery.data?.data ?? []
+  const loading = methodsQuery.isPending
+
+  useEffect(() => {
+    if (!open) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对话框打开时重置状态
+    setPaymentResult(null)
+    setAmount(0)
+    setCustomAmount("")
+    setSelectedProvider("")
+    setSelectedMethod("")
+  }, [open])
+
+  // 未手动选择时默认选中第一个支付方式（原逻辑在加载完成后 setState，这里改为派生）
+  const effectiveProvider = selectedProvider || (methods[0]?.provider ?? "")
+  const effectiveMethod = selectedProvider ? selectedMethod : (methods[0]?.method ?? "")
+
+  const effectiveAmount = customAmount ? Math.round(parseFloat(customAmount) * 100) : amount
+  const selectedMethodObj = methods.find(
+    (m) => (m.provider ?? "") === effectiveProvider && (m.method ?? "") === effectiveMethod
+  )
+  const fee = calculateFee(selectedMethodObj, effectiveAmount)
+  const totalAmount = effectiveAmount + fee
+
+  const handleSubmit = async () => {
+    if (effectiveAmount <= 0) {
+      toast.error("请选择或输入充值金额")
+      return
+    }
+    if (effectiveAmount < minAmount) {
+      toast.error(`充值金额不能低于 ${formatAmount(minAmount)}`)
+      return
+    }
+    if (!effectiveProvider) {
+      toast.error("请选择支付方式")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const { data: res } = await postPortalPayments({
+        body: {
+          amount: effectiveAmount,
+          provider: effectiveProvider,
+          method: effectiveMethod || undefined,
+        },
+      })
+      if (res?.code !== 0) {
+        toast.error(res?.message ?? "创建支付失败")
+        return
+      }
+      const data = res.data
+      if (!data) return
+
+      setPaymentResult({
+        paymentNo: data.payment_no ?? "",
+        payURL: data.pay_url ?? "",
+        qrCode: !!data.qr_code,
+        amount: data.amount ?? effectiveAmount,
+      })
+      if (!data.qr_code) {
+        window.open(data.pay_url, "_blank", "noopener,noreferrer")
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err, "创建支付失败"))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (paymentResult) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md" preventClose>
+          <DialogHeader>
+            <DialogTitle>等待支付</DialogTitle>
+            <DialogDescription>
+              {paymentResult.qrCode
+                ? "请使用手机扫描二维码完成支付"
+                : "已在新窗口打开支付页面，完成支付后将自动到账"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <PaymentPending
+            paymentNo={paymentResult.paymentNo}
+            payURL={paymentResult.payURL}
+            qrCode={paymentResult.qrCode}
+            amount={paymentResult.amount}
+            onPaid={() => {
+              onSuccess?.()
+              onOpenChange(false)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>充值</DialogTitle>
+          <DialogDescription>选择金额和支付方式进行充值</DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : methods.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            暂无可用支付方式，请联系管理员
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <div className="space-y-3">
+              <Label>充值金额</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {presetAmounts.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    className={cn(
+                      "rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors",
+                      amount === a && !customAmount
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:bg-accent"
+                    )}
+                    onClick={() => {
+                      setAmount(a)
+                      setCustomAmount("")
+                    }}
+                  >
+                    {formatAmount(a)}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-1.5">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={(minAmount / 100).toFixed(2)}
+                  placeholder={`自定义金额（元），最低 ${formatAmount(minAmount)}`}
+                  value={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value)
+                    setAmount(0)
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>支付方式</Label>
+              <PaymentMethodGrid
+                methods={methods}
+                selectedProvider={effectiveProvider}
+                selectedMethod={effectiveMethod}
+                onSelect={(p, m) => { setSelectedProvider(p); setSelectedMethod(m) }}
+              />
+            </div>
+
+            {fee > 0 && effectiveAmount > 0 && (
+              <div className="rounded-md border border-dashed p-3 text-sm space-y-1">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>充值金额</span>
+                  <span>{formatAmount(effectiveAmount)}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>手续费{selectedMethodObj?.fee_type === "percent" ? `（${formatFeePercent(selectedMethodObj.fee_amount ?? 0)}）` : ""}</span>
+                  <span>+{formatAmount(fee)}</span>
+                </div>
+                <div className="flex justify-between font-medium pt-1 border-t">
+                  <span>实付金额</span>
+                  <span>{formatAmount(totalAmount)}</span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              className="w-full"
+              disabled={submitting || effectiveAmount <= 0}
+              onClick={handleSubmit}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  创建支付中...
+                </>
+              ) : (
+                `充值 ${effectiveAmount > 0 ? formatAmount(fee > 0 ? totalAmount : effectiveAmount) : ""}`
+              )}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}

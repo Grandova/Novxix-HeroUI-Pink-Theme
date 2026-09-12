@@ -1,0 +1,29 @@
+# Dependencies and generated output
+node_modules/
+dist/
+dist-ssr/
+src/api/
+release/
+*.zip
+*.tar.gz
+*.tsbuildinfo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+
+# Logs, tests and tools
+*.log
+logs/
+test-results/
+playwright-report/
+blob-report/
+e2e/.auth/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

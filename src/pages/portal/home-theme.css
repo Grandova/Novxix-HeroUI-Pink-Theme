@@ -1,0 +1,218 @@
+/* Home alone opts into these rules. CMS data and all existing interactions remain
+ * in Home.tsx; other public pages return to their original theme on unmount.
+ */
+body[data-vmnet-home][data-portal-theme='heroui'] {
+  & #root > .min-h-screen { background-color: var(--secondary); }
+  & #root > .min-h-screen > nav {
+    top: calc(var(--demo-banner-height, 0px) + 14px);
+    left: 24px;
+    right: 24px;
+    width: auto;
+    max-width: 1264px;
+    margin-inline: auto;
+    border-radius: 22px;
+    border-style: solid;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 3%);
+    backdrop-filter: blur(22px) saturate(140%);
+  }
+  & #root > .min-h-screen > nav:not(.bg-transparent) { background-color: color-mix(in srgb, var(--background) 93%, transparent); border-color: var(--border); }
+  & #root > .min-h-screen > nav.bg-transparent { background: #ffffff0c; border: 1px solid #ffffff26; }
+  & #root > .min-h-screen > nav > .max-w-6xl { min-height: 68px; height: auto; padding-inline: 24px; }
+  & #root > .min-h-screen > nav > .border-t { border-radius: 0 0 18px 18px; }
+  & #root > .min-h-screen > footer { border: 0; background: var(--background); }
+  & #root > .min-h-screen > footer > .max-w-6xl { max-width: 1280px; padding-inline: 32px; }
+  & main > section { border-top: 0; }
+  & main > section > .max-w-6xl { max-width: 1280px; padding-inline: 40px; }
+  & main > section:not(.vmnet-home-hero):not(.vmnet-home-stats) > :is(.max-w-6xl, .max-w-3xl) { padding-block: 76px; }
+  & main > section:nth-of-type(even):not(.vmnet-home-stats) { background-color: var(--background); }
+  & main > section h2 { font-size: clamp(28px, 3vw, 42px); font-weight: 650; letter-spacing: -0.045em; }
+  & main > section h2 + p { font-size: 16px; line-height: 1.75; }
+  & .vmnet-home-hero {
+    background: linear-gradient(180deg, var(--accent) 0%, var(--secondary) 78%, var(--background) 100%);
+    color: var(--foreground);
+  }
+  & .vmnet-home-hero > .absolute:has(canvas) { opacity: 0.14; }
+  & .vmnet-home-hero > .absolute > .bg-gradient-to-b { background: linear-gradient(180deg, transparent, var(--background)); }
+  & .vmnet-home-hero > .max-w-6xl { padding-top: 156px; padding-bottom: 64px; }
+  & .vmnet-home-intro { max-width: 900px; width: 100%; display: flex; flex-direction: column; gap: 24px; text-align: center; align-items: center; }
+  & .vmnet-home-intro > :first-child { grid-row: 1 / 3; }
+  & .vmnet-home-intro h1 { font-size: clamp(40px, 5vw, 68px); font-weight: 600; line-height: 1.14; color: var(--foreground); letter-spacing: -0.05em; }
+  & .vmnet-home-intro h1 > span { color: var(--hero-highlight); }
+  & .vmnet-home-intro > :nth-child(2) { align-self: center; }
+  & .vmnet-home-intro p { margin-top: 0; color: var(--muted-foreground); font-size: 17px; line-height: 1.85; text-wrap: pretty; }
+  & .vmnet-home-actions { justify-content: center; flex-wrap: wrap; align-self: center; margin-top: 4px; gap: 12px; }
+  & .vmnet-home-actions [data-slot='button'] { min-height: 48px; font-size: 15px; border-radius: 10px; }
+  & .vmnet-home-actions [data-slot='button']:first-child { color: var(--primary-foreground); background: var(--primary); box-shadow: none; }
+  & .vmnet-home-actions [data-slot='button']:first-child:hover { background: var(--hero-hover); }
+  & .vmnet-home-actions [data-slot='button']:last-child { color: var(--foreground); background: var(--background); box-shadow: inset 0 0 0 1px var(--input); }
+  & .vmnet-home-actions [data-slot='button']:last-child:hover { background: var(--muted); }
+  & .vmnet-home-preview { margin-top: 56px; color: var(--foreground); }
+  & .vmnet-home-preview > div { max-width: none; }
+  & .vmnet-home-preview > div > div { border-radius: 20px; padding: 6px; background: var(--muted); box-shadow: 0 16px 48px -24px #00000030; }
+  & .vmnet-home-preview .animate-border-rotate { background: color-mix(in srgb, var(--hero-highlight) 25%, var(--border)); animation: none; border-radius: 20px; }
+  & .vmnet-home-preview .relative.bg-muted\/20 { border-radius: 16px; }
+  & .vmnet-home-preview .bg-card.overflow-hidden { border-radius: 22px; }
+  & .vmnet-home-preview .border-b-2 { color: var(--primary); border-color: var(--primary); background-color: var(--accent); }
+  & .vmnet-home-hero:has([aria-label*='轮播图']) .vmnet-home-intro,
+  & .vmnet-home-hero:has(> .bg-black\/50) .vmnet-home-intro { padding-block: 40px 100px; }
+  & .vmnet-home-hero .absolute:has(> a), & .vmnet-home-hero .absolute:has(> button[aria-current]) { max-width: calc(100% - 32px); }
+  & .vmnet-home-stats { background: var(--background); }
+  & .vmnet-home-stats > .max-w-6xl { padding-block: 34px; }
+  & .vmnet-home-stats .grid > div + div { border-left: 1px solid var(--border); }
+  & .vmnet-home-stats .font-bold { color: var(--foreground); font-variant-numeric: tabular-nums; }
+  & .vmnet-home-features > div { display: grid; gap: 28px; }
+  & .vmnet-home-feature { margin-block: 0; padding: 36px; border-radius: 22px; border: 1px solid var(--vmnet-hairline); background: var(--background); column-gap: 60px; }
+  & .vmnet-home-feature:nth-child(even) { background: color-mix(in srgb, var(--accent) 24%, var(--background)); }
+  & .vmnet-home-feature h3 { font-size: 28px; font-weight: 600; letter-spacing: -0.035em; }
+  & .vmnet-home-feature p { font-size: 15px; }
+  & .vmnet-home-feature .size-10 { width: 44px; height: 44px; border-radius: 14px; }
+  & .vmnet-glow-card { border-radius: 22px; background: var(--vmnet-hairline); box-shadow: var(--hero-shadow); height: 100%; }
+  & .vmnet-glow-card > .absolute { border-radius: 22px; }
+  & .vmnet-glow-card > .relative { border-radius: 21px; }
+  & .vmnet-home-plan { height: 100%; }
+  & .vmnet-home-plan .vmnet-glow-card > div.relative > .p-6 { height: 100%; display: flex; flex-direction: column; padding: 28px; }
+  & .vmnet-home-plan .text-3xl { color: var(--foreground); font-size: 38px; font-weight: 600; }
+  & .vmnet-home-plan h3 { font-size: 18px; }
+  & .vmnet-home-plan [data-slot='button'] { margin-top: auto; min-height: 44px; color: var(--primary-foreground); background: var(--primary); box-shadow: none; }
+  & .vmnet-home-plan [data-slot='button']:hover { background: var(--hero-hover); }
+  & #pricing { scroll-margin-top: calc(var(--demo-banner-height, 0px) + 100px); }
+  & #pricing .inline-flex.p-0\.5 { border-radius: 16px; padding: 5px; border: 0; background: var(--muted); }
+  & #pricing .inline-flex > button { min-height: 40px; border-radius: 12px; padding-inline: 24px; }
+  & #pricing .inline-flex > button .absolute { border: 0; border-radius: 12px; }
+  & .vmnet-home-steps .h-full.bg-card { border-radius: 22px; border-color: var(--vmnet-hairline); box-shadow: var(--hero-shadow); }
+  & .vmnet-home-steps span.text-3xl { color: var(--primary); font-weight: 500; }
+  & .vmnet-home-regions .bg-card.overflow-hidden { border-radius: 22px; box-shadow: var(--hero-shadow); }
+  & .vmnet-home-faq > .max-w-3xl { max-width: 900px; }
+  & .vmnet-home-faq .mt-10 > div { border: 1px solid var(--border); border-radius: 22px; padding-inline: 24px; margin-bottom: 12px; background: var(--background); }
+  & .vmnet-home-faq button { gap: 16px; }
+  & .vmnet-home-cta { padding: 12px 32px 64px; background: var(--secondary) !important; }
+  & .vmnet-home-cta > .max-w-6xl { padding: 56px !important; border-radius: 20px; color: var(--foreground); background: var(--accent); border: 1px solid var(--vmnet-hairline); }
+  & .vmnet-home-cta p { color: var(--muted-foreground); }
+  & .vmnet-home-cta [data-slot='button'] { color: var(--primary-foreground); background: var(--primary); border-radius: 14px; animation: none; font-size: 16px; }
+
+  /* Banner images keep a readable overlay and their original controls. */
+  & .vmnet-home-hero:not(:has(canvas)) { background: #30262a; }
+  & .vmnet-home-hero:not(:has(canvas)) h1 { color: #fafafa; }
+  & .vmnet-home-hero:not(:has(canvas)) h1 > span { color: #f6c6d4; }
+  & .vmnet-home-hero:not(:has(canvas)) .vmnet-home-intro p { color: #e4e4e7; }
+  & .vmnet-home-hero:not(:has(canvas)) .vmnet-home-actions [data-slot='button']:first-child { color: #30262a; background: #fafafa; }
+  & .vmnet-home-hero:not(:has(canvas)) .vmnet-home-actions [data-slot='button']:last-child { color: #fafafa; background: #ffffff12; box-shadow: inset 0 0 0 1px #ffffff50; }
+  & .vmnet-home-preview { max-width: 1060px; width: 100%; margin-inline: auto; }
+  & .vmnet-home-feature .rounded-xl { border-radius: 12px; box-shadow: none; }
+  & .vmnet-home-feature .bg-primary\/10 { background: var(--accent); color: var(--hero-highlight); }
+  & .vmnet-home-feature .bg-primary\/10 svg { color: inherit; }
+  & .vmnet-home-steps .h-full.bg-card { box-shadow: none; }
+  & .vmnet-home-cta [data-slot='button']:hover { background: var(--hero-hover); }
+
+  @media (max-width: 1023px) {
+    & .vmnet-home-intro { gap: 28px; grid-template-columns: 1fr; }
+    & .vmnet-home-intro > :first-child { grid-row: auto; }
+    & .vmnet-home-intro p { margin-inline: auto; max-width: 600px; }
+    & .vmnet-home-actions { margin-top: 0; }
+    & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] { grid-template-columns: 1fr; }
+    & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div { border-left: 0; border-top: 1px solid var(--border); }
+  }
+  @media (max-width: 767px) {
+    & #root > .min-h-screen > nav { left: 12px; right: 12px; top: calc(var(--demo-banner-height, 0px) + 10px); border-radius: 16px; }
+    & #root > .min-h-screen > nav > .max-w-6xl { min-height: 60px; padding-inline: 16px; }
+    & main > section > .max-w-6xl { padding-inline: 22px; }
+    & main > section:not(.vmnet-home-hero):not(.vmnet-home-stats) > :is(.max-w-6xl, .max-w-3xl) { padding-block: 48px; }
+    & .vmnet-home-hero > .max-w-6xl { padding-top: 116px; padding-bottom: 36px; }
+    & .vmnet-home-intro h1 { font-size: clamp(34px, 9vw, 48px); }
+    & .vmnet-home-intro p { font-size: 16px; }
+    & .vmnet-home-preview { margin-top: 40px; }
+    & .vmnet-home-preview > div > div { padding: 4px; border-radius: 20px; }
+    & .vmnet-home-stats .grid { gap: 24px 16px; }
+    & .vmnet-home-stats .grid > div:nth-child(odd) { border-left: 0; }
+    & .vmnet-home-feature { padding: 24px; gap: 28px; border-radius: 22px; }
+    & .vmnet-home-feature h3 { font-size: 24px; }
+    & .vmnet-home-plan .vmnet-glow-card > div.relative > .p-6 { padding: 24px; }
+    & .vmnet-home-cta { padding: 8px 16px 40px; }
+    & .vmnet-home-cta > .max-w-6xl { padding: 36px 22px !important; border-radius: 22px; }
+  }
+}
+/* Asymmetric landing layout; CMS sections keep their original data and order. */
+body[data-vmnet-home][data-portal-theme='heroui'] {
+  & main > section > .max-w-6xl { max-width: 1440px; padding-inline: 56px; }
+  & .vmnet-home-hero:has(canvas) > .max-w-6xl { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 48px; align-items: center; padding-block: 160px 96px; }
+  & .vmnet-home-hero:has(canvas) .vmnet-home-intro { align-items: flex-start; text-align: left; gap: 28px; }
+  & .vmnet-home-hero:has(canvas) .vmnet-home-intro > :nth-child(2) { align-self: stretch; }
+  & .vmnet-home-hero:has(canvas) .vmnet-home-intro h1 { font-size: clamp(40px, 4.4vw, 66px); line-height: 1.2; }
+  & .vmnet-home-hero:has(canvas) .vmnet-home-intro p { font-size: 16px; max-width: 420px; margin-inline: 0; }
+  & .vmnet-home-hero:has(canvas) .vmnet-home-actions { align-self: flex-start; justify-content: flex-start; margin-top: 4px; }
+  & .vmnet-home-preview { margin: 0; max-width: none; min-width: 0; }
+  & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] { grid-template-columns: 1fr; }
+  & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div { border-left: 0; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; padding: 24px; }
+  & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div > :first-child { grid-column: 1 / -1; }
+  & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div > :last-child { margin-top: 0; align-self: center; }
+  & .vmnet-home-preview > div > div { padding: 8px; border-radius: 28px; box-shadow: 0 24px 60px -34px rgb(105 52 70 / 24%); }
+  & .vmnet-home-stats { margin: 0 40px; border: 1px solid var(--border); border-radius: 24px; background: var(--background); }
+  & .vmnet-home-stats > .max-w-6xl { padding-block: 32px; }
+  & .vmnet-home-stats .text-center { text-align: left; padding-left: 32px; }
+  & .vmnet-home-stats .grid > div:first-child .text-center { padding-left: 0; }
+  & .vmnet-home-features > div { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  & .vmnet-home-feature { display: flex; flex-direction: column; direction: ltr; gap: 28px; align-items: stretch; padding: 36px; }
+  & .vmnet-home-feature > * { direction: ltr; min-width: 0; }
+  & .vmnet-home-feature:first-child { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 72px; padding: 48px; background: var(--accent); border-color: transparent; }
+  & .vmnet-home-feature:first-child h3 { font-size: 36px; }
+  & .vmnet-home-feature:not(:first-child) > :last-child { margin-top: auto; }
+  & .vmnet-home-feature ul { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+  & .vmnet-home-feature li { margin-block: 0; }
+  & .vmnet-home-steps > .max-w-6xl { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 64px; align-items: start; }
+  & .vmnet-home-steps > .max-w-6xl > :first-child { position: sticky; top: 120px; }
+  & .vmnet-home-steps > .max-w-6xl > :first-child :is(h2,p) { text-align: left; }
+  & .vmnet-home-steps > .max-w-6xl > .mt-14 { margin-top: 0; }
+  & .vmnet-home-steps .mt-14 > .grid { grid-template-columns: 1fr; gap: 16px; }
+  & .vmnet-home-steps .mt-14 > .hidden { display: none; }
+  & .vmnet-home-steps .h-full.bg-card { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 24px; padding: 28px; }
+  & .vmnet-home-steps .h-full.bg-card > span { grid-row: 1 / 3; align-self: center; font-size: 32px; }
+  & .vmnet-home-steps .h-full.bg-card > h3 { margin-top: 0; }
+  & .vmnet-home-steps .h-full.bg-card > p { margin-top: 6px; }
+  & #pricing > .max-w-6xl > :first-child :is(h2,p) { text-align: left; }
+  & #pricing > .max-w-6xl > :nth-child(2) > div { justify-content: flex-start; margin-block: 28px 40px; }
+  & .vmnet-home-plan .vmnet-glow-card > div.relative > .p-6 { padding: 32px; }
+  & .vmnet-home-plan .space-y-2\.5 { border-top: 1px solid var(--border); padding-top: 24px; }
+  & .vmnet-home-faq > .max-w-3xl { max-width: 1328px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px 72px; padding-inline: 40px; align-items: start; }
+  & .vmnet-home-faq > .max-w-3xl > :first-child { grid-column: 1; grid-row: 1; }
+  & .vmnet-home-faq h2 { text-align: left; }
+  & .vmnet-home-faq .mt-10 { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+  & .vmnet-home-faq .mt-8 { grid-column: 1; grid-row: 2; text-align: left; margin-top: 0; }
+  & .vmnet-home-cta { padding-inline: 40px; }
+  & .vmnet-home-cta > .max-w-6xl { max-width: 1328px; }
+  & .vmnet-home-cta .text-center { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 40px; text-align: left; align-items: center; }
+  & .vmnet-home-cta h2 { grid-column: 1; }
+  & .vmnet-home-cta p { grid-column: 1; margin: 0; max-width: none; }
+  & .vmnet-home-cta .mt-8 { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+
+  @media (max-width: 1100px) {
+    & main > section > .max-w-6xl { padding-inline: 32px; }
+    & .vmnet-home-hero:has(canvas) > .max-w-6xl { gap: 32px; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); padding-top: 136px; }
+    & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div { grid-template-columns: 1fr; }
+    & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div > :last-child { margin-top: 16px; }
+    & .vmnet-home-feature:first-child { gap: 32px; padding: 32px; }
+    & .vmnet-home-steps > .max-w-6xl { grid-template-columns: 220px minmax(0, 1fr); gap: 32px; }
+    & .vmnet-home-faq > .max-w-3xl { grid-template-columns: 220px minmax(0, 1fr); gap: 24px 32px; padding-inline: 32px; }
+  }
+  @media (max-width: 767px) {
+    & main > section > .max-w-6xl { padding-inline: 22px; }
+    & .vmnet-home-hero:has(canvas) > .max-w-6xl { grid-template-columns: 1fr; gap: 36px; padding-block: 116px 40px; }
+    & .vmnet-home-hero:has(canvas) .vmnet-home-intro h1 { font-size: clamp(34px, 9vw, 48px); }
+    & .vmnet-home-hero:has(canvas) .vmnet-home-intro { gap: 20px; }
+    & .vmnet-home-preview > div > div { padding: 4px; }
+    & .vmnet-home-preview .grid.md\:grid-cols-\[1fr_280px\] > div + div { padding: 20px; }
+    & .vmnet-home-stats { margin-inline: 16px; }
+    & .vmnet-home-stats .text-center { padding-left: 12px; }
+    & .vmnet-home-stats .grid > div:nth-child(odd) .text-center { padding-left: 0; }
+    & .vmnet-home-features > div { grid-template-columns: 1fr; gap: 16px; }
+    & .vmnet-home-feature, & .vmnet-home-feature:first-child { display: flex; gap: 24px; padding: 24px; }
+    & .vmnet-home-feature:first-child h3 { font-size: 28px; }
+    & .vmnet-home-steps > .max-w-6xl { grid-template-columns: 1fr; gap: 28px; }
+    & .vmnet-home-steps > .max-w-6xl > :first-child { position: static; }
+    & .vmnet-home-steps .h-full.bg-card { grid-template-columns: 36px minmax(0, 1fr); gap: 8px 18px; padding: 24px; }
+    & .vmnet-home-faq > .max-w-3xl { display: flex; flex-direction: column; padding-inline: 22px; gap: 24px; }
+    & .vmnet-home-faq > .max-w-3xl > * { width: 100%; }
+    & .vmnet-home-cta { padding-inline: 16px; }
+    & .vmnet-home-cta .text-center { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+    & .vmnet-home-cta .mt-8 { margin-top: 4px; }
+  }
+}
