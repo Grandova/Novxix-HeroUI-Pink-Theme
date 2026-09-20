@@ -41,10 +41,11 @@ import {
   getPortalOrdersByIdQueryKey,
   getPortalOrdersByIdRefundEligibilityOptions,
   getPortalOrdersQueryKey,
+  getPortalInstancesByIdQueryKey,
 } from '@/api/@tanstack/react-query.gen'
 import { PayDialog } from './pay-dialog'
 import type { PortalPortalOrderDetail } from '@/api'
-import { useSiteName, useFormatAmount } from '@/hooks/use-site-settings'
+import { useSiteName, useFormatAmount, useFormatDate } from '@/hooks/use-site-settings'
 import { formatMemory, getErrorMessage } from '@/lib/utils'
 import { useDocumentTitle } from '@uidotdev/usehooks'
 import { toast } from 'sonner'
@@ -100,6 +101,7 @@ export default function PortalOrderDetail() {
   usePortalTheme()
   const siteName = useSiteName()
   const formatAmount = useFormatAmount()
+  const formatDate = useFormatDate()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -141,7 +143,10 @@ export default function PortalOrderDetail() {
   const refreshOrder = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: getPortalOrdersByIdQueryKey({ path: { id: Number(id) } }) })
     queryClient.invalidateQueries({ queryKey: getPortalOrdersQueryKey() })
-  }, [queryClient, id])
+    if (order?.type === 'traffic_package' && order.instance_id) {
+      queryClient.invalidateQueries({ queryKey: getPortalInstancesByIdQueryKey({ path: { id: order.instance_id } }) })
+    }
+  }, [queryClient, id, order])
 
   const handleCancel = async () => {
     if (!order?.id) return
@@ -308,15 +313,15 @@ export default function PortalOrderDetail() {
               <InfoRow label="交付状态" value={fulfillmentMap[String(order.fulfillment_status)] ?? String(order.fulfillment_status)} />
             )}
             {order.period_start && (
-              <InfoRow label="服务开始" value={order.period_start} />
+              <InfoRow label="服务开始" value={formatDate(order.period_start)} />
             )}
             {order.period_end && (
-              <InfoRow label="服务到期" value={order.period_end} />
+              <InfoRow label="服务到期" value={formatDate(order.period_end)} />
             )}
             {order.paid_at && (
-              <InfoRow label="支付时间" value={order.paid_at} />
+              <InfoRow label="支付时间" value={formatDate(order.paid_at)} />
             )}
-            <InfoRow label="创建时间" value={order.created_at ?? ''} />
+            <InfoRow label="创建时间" value={formatDate(order.created_at)} />
             {order.remark && (
               <InfoRow label="备注" value={order.remark} />
             )}
@@ -412,6 +417,7 @@ export default function PortalOrderDetail() {
           orderId={order.id}
           amount={order.amount ?? 0}
           onSuccess={refreshOrder}
+          onAmountChanged={refreshOrder}
         />
       )}
 

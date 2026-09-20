@@ -1,11 +1,11 @@
 {
   "id": "hero-pink",
   "name": "Hero Pink",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "淡粉色 Novaix 主题，包含门户侧栏布局与响应式首页。",
   "author": {
     "name": "Yoshino",
     "url": "https://github.com/Grandova"
   },
-  "requires": "~0.4.2"
+  "requires": "~0.4.4"
 }

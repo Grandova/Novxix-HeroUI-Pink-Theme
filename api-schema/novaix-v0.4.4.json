@@ -3066,6 +3066,74 @@
                 }
             }
         },
+        "/admin/coupons/{id}/bound-instances": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取绑定了指定持续折扣优惠券的实例列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "优惠券管理"
+                ],
+                "summary": "获取优惠券绑定的实例列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "example": 1,
+                        "description": "优惠券 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Body"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/service.CouponBoundInstance"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "优惠券不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/coupons/{id}/usages": {
             "get": {
                 "security": [
@@ -5766,7 +5834,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "更新实例信息",
+                "description": "更新实例信息，支持修改到期时间（expire_at）或清除到期时间（clear_expire=true 设为永不过期）",
                 "consumes": [
                     "application/json"
                 ],
@@ -9481,7 +9549,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建一个新的 IP 地址池（全局资源）。创建 IPv6 池时会自动配置匹配节点的网桥 IPv6",
+                "description": "创建一个新的 IP 地址池（全局资源）。创建 IPv6 池时会自动配置匹配节点的 IPv6 路由转发",
                 "consumes": [
                     "application/json"
                 ],
@@ -12916,6 +12984,64 @@
                     },
                     "400": {
                         "description": "参数错误或节点未初始化",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "节点不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/nodes/{id}/networks/sync-ipv6-nic": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将节点上已有实例的 bridged IPv6 NIC 转换为 routed 模式。需要节点已配置上联网卡。适用于先创建实例、后配置上联网卡的场景",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "节点管理"
+                ],
+                "summary": "同步 IPv6 NIC 模式",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "节点 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.Body"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/service.SyncIPv6NICResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "节点未配置上联网卡或未初始化",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorBody"
                         }
@@ -24315,6 +24441,70 @@
                 }
             }
         },
+        "/portal/instances/{id}/auto-renew": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "开启或关闭当前实例的自动续费功能。开启后，实例到期时将自动使用账户余额续费",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "云服务器"
+                ],
+                "summary": "切换自动续费",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "实例 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "开关状态",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/portal.ToggleAutoRenewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/response.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    },
+                    "404": {
+                        "description": "实例不存在",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    },
+                    "422": {
+                        "description": "参数验证失败",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorBody"
+                        }
+                    }
+                }
+            }
+        },
         "/portal/instances/{id}/console": {
             "get": {
                 "security": [
@@ -33673,11 +33863,11 @@
             "properties": {
                 "accepted_at": {
                     "type": "string",
-                    "example": "2026-09-03 00:00:00"
+                    "example": "2026-09-03T00:00:00Z"
                 },
                 "approved_at": {
                     "type": "string",
-                    "example": "2026-09-03 12:00:00"
+                    "example": "2026-09-03T12:00:00Z"
                 },
                 "approved_by": {
                     "type": "integer",
@@ -33689,11 +33879,11 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-09-02 00:00:00"
+                    "example": "2026-09-02T00:00:00Z"
                 },
                 "expires_at": {
                     "type": "string",
-                    "example": "2026-09-05 00:00:00"
+                    "example": "2026-09-05T00:00:00Z"
                 },
                 "fee_amount": {
                     "type": "integer",
@@ -33766,7 +33956,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -33795,7 +33985,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -33815,7 +34005,7 @@
                 },
                 "reviewed_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "reviewed_by": {
                     "type": "integer",
@@ -33865,7 +34055,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -33930,7 +34120,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -34058,7 +34248,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -34103,7 +34293,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-19 12:00:00"
+                    "example": "2026-05-19T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -34160,7 +34350,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -34172,7 +34362,7 @@
                 },
                 "published_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "slug": {
                     "type": "string",
@@ -34200,7 +34390,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -34304,7 +34494,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -34328,7 +34518,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -34580,7 +34770,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -34588,7 +34778,7 @@
                 },
                 "end_at": {
                     "type": "string",
-                    "example": "2025-12-31 23:59:59"
+                    "example": "2025-12-31T23:59:59Z"
                 },
                 "id": {
                     "type": "integer",
@@ -34608,7 +34798,7 @@
                 },
                 "start_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "status": {
                     "type": "integer",
@@ -34624,7 +34814,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "url": {
                     "type": "string",
@@ -34734,7 +34924,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -34762,7 +34952,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -34855,7 +35045,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -34863,7 +35053,7 @@
                 },
                 "published_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "status": {
                     "type": "integer",
@@ -34871,7 +35061,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "version": {
                     "type": "string",
@@ -34935,7 +35125,11 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
+                },
+                "duration": {
+                    "type": "string",
+                    "example": "once"
                 },
                 "enabled": {
                     "type": "boolean",
@@ -34943,7 +35137,7 @@
                 },
                 "expires_at": {
                     "type": "string",
-                    "example": "2025-12-31 23:59:59"
+                    "example": "2025-12-31T23:59:59Z"
                 },
                 "id": {
                     "type": "integer",
@@ -34963,7 +35157,7 @@
                 },
                 "starts_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "type": {
                     "type": "string",
@@ -34971,7 +35165,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "usage_limit": {
                     "type": "integer",
@@ -35002,6 +35196,10 @@
                 "code": {
                     "type": "string",
                     "example": "WELCOME50"
+                },
+                "duration": {
+                    "type": "string",
+                    "example": "once"
                 },
                 "enabled": {
                     "type": "boolean",
@@ -35052,6 +35250,10 @@
                     "type": "string",
                     "example": "WELCOME50"
                 },
+                "duration": {
+                    "type": "string",
+                    "example": "once"
+                },
                 "enabled": {
                     "type": "boolean",
                     "example": true
@@ -35095,7 +35297,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -35128,7 +35330,7 @@
                 },
                 "expire_at": {
                     "type": "string",
-                    "example": "2025-05-20 00:00:00"
+                    "example": "2025-05-20T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -35265,7 +35467,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "detail": {
                     "type": "string",
@@ -35294,7 +35496,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -35623,7 +35825,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "group_name": {
                     "type": "string",
@@ -35647,7 +35849,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -35719,7 +35921,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -35743,7 +35945,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "view_count": {
                     "type": "integer",
@@ -35812,7 +36014,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -35844,7 +36046,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -36029,7 +36231,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -36095,7 +36297,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "default_user": {
                     "type": "string",
@@ -36574,6 +36776,14 @@
                         "type": "string"
                     }
                 },
+                "coupon_code": {
+                    "type": "string",
+                    "example": "VIP50"
+                },
+                "coupon_id": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "cpu": {
                     "type": "number",
                     "example": 2
@@ -36584,7 +36794,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -36605,7 +36815,7 @@
                 },
                 "expire_at": {
                     "type": "string",
-                    "example": "2026-12-31 23:59:59"
+                    "example": "2026-12-31T23:59:59Z"
                 },
                 "ha_enabled": {
                     "type": "boolean",
@@ -36697,8 +36907,8 @@
                     "example": false
                 },
                 "traffic_used": {
-                    "type": "integer",
-                    "example": 500
+                    "type": "number",
+                    "example": 500.25
                 },
                 "type": {
                     "type": "string",
@@ -36834,6 +37044,10 @@
                     "type": "integer",
                     "example": 100
                 },
+                "clear_expire": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "config": {
                     "type": "object",
                     "additionalProperties": {
@@ -36860,6 +37074,10 @@
                 "disk": {
                     "type": "integer",
                     "example": 40
+                },
+                "expire_at": {
+                    "type": "string",
+                    "example": "2026-12-31T23:59:59Z"
                 },
                 "hostname": {
                     "type": "string",
@@ -36978,7 +37196,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-07-04 12:00:00"
+                    "example": "2026-07-04T12:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -37002,7 +37220,7 @@
                 },
                 "issued_at": {
                     "type": "string",
-                    "example": "2026-07-04 12:00:00"
+                    "example": "2026-07-04T12:00:00Z"
                 },
                 "reject_reason": {
                     "type": "string",
@@ -37022,7 +37240,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2026-07-04 12:00:00"
+                    "example": "2026-07-04T12:00:00Z"
                 },
                 "user_id": {
                     "type": "integer",
@@ -37074,13 +37292,25 @@
         "ippool.CreateIPPoolResponse": {
             "type": "object",
             "properties": {
+                "alloc_mode": {
+                    "type": "string",
+                    "example": "sequential"
+                },
+                "alloc_range_end": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "alloc_range_start": {
+                    "type": "string",
+                    "example": "192.168.1.10"
+                },
                 "cidr": {
                     "type": "string",
                     "example": "192.168.1.0/24"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -37155,6 +37385,18 @@
                 "type"
             ],
             "properties": {
+                "alloc_mode": {
+                    "type": "string",
+                    "example": "sequential"
+                },
+                "alloc_range_end": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "alloc_range_start": {
+                    "type": "string",
+                    "example": "192.168.1.10"
+                },
                 "cidr": {
                     "type": "string",
                     "example": "192.168.1.0/24"
@@ -37266,7 +37508,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -37297,13 +37539,25 @@
         "ippool.IPPoolItem": {
             "type": "object",
             "properties": {
+                "alloc_mode": {
+                    "type": "string",
+                    "example": "sequential"
+                },
+                "alloc_range_end": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "alloc_range_start": {
+                    "type": "string",
+                    "example": "192.168.1.10"
+                },
                 "cidr": {
                     "type": "string",
                     "example": "192.168.1.0/24"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -37366,13 +37620,25 @@
         "ippool.UpdateIPPoolResponse": {
             "type": "object",
             "properties": {
+                "alloc_mode": {
+                    "type": "string",
+                    "example": "sequential"
+                },
+                "alloc_range_end": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "alloc_range_start": {
+                    "type": "string",
+                    "example": "192.168.1.10"
+                },
                 "cidr": {
                     "type": "string",
                     "example": "192.168.1.0/24"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -37454,6 +37720,18 @@
         "ippool.UpdateRequest": {
             "type": "object",
             "properties": {
+                "alloc_mode": {
+                    "type": "string",
+                    "example": "sequential"
+                },
+                "alloc_range_end": {
+                    "type": "string",
+                    "example": "192.168.1.100"
+                },
+                "alloc_range_start": {
+                    "type": "string",
+                    "example": "192.168.1.10"
+                },
                 "cidr": {
                     "type": "string",
                     "example": "192.168.1.0/24"
@@ -37523,7 +37801,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -37589,7 +37867,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "group_name": {
                     "type": "string",
@@ -37617,7 +37895,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "url": {
                     "type": "string",
@@ -37657,7 +37935,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "detail": {
                     "type": "string",
@@ -37731,7 +38009,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "icon": {
                     "type": "string",
@@ -37767,7 +38045,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "url": {
                     "type": "string",
@@ -38046,7 +38324,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "disk_overcommit": {
                     "type": "number",
@@ -38107,6 +38385,10 @@
                 "node_group_id": {
                     "type": "integer",
                     "example": 1
+                },
+                "parent_interface": {
+                    "type": "string",
+                    "example": "ens160"
                 },
                 "physical_disk_total": {
                     "type": "integer",
@@ -38390,6 +38672,10 @@
                     "type": "string",
                     "example": "incusbr0"
                 },
+                "parent_interface": {
+                    "type": "string",
+                    "example": "ens160"
+                },
                 "port": {
                     "type": "integer",
                     "example": 8443
@@ -38479,7 +38765,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -38730,7 +39016,7 @@
                 },
                 "linked_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "method": {
                     "type": "string",
@@ -38969,7 +39255,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "discount_amount": {
                     "type": "integer",
@@ -39006,15 +39292,15 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "period_end": {
                     "type": "string",
-                    "example": "2026-06-12 12:00:00"
+                    "example": "2026-06-12T12:00:00Z"
                 },
                 "period_start": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "plan_id": {
                     "type": "integer",
@@ -39067,7 +39353,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "user_id": {
                     "type": "integer",
@@ -39205,7 +39491,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -39238,7 +39524,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "discount_amount": {
                     "type": "integer",
@@ -39262,15 +39548,15 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "period_end": {
                     "type": "string",
-                    "example": "2026-06-12 12:00:00"
+                    "example": "2026-06-12T12:00:00Z"
                 },
                 "period_start": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "plan_id": {
                     "type": "integer",
@@ -39372,7 +39658,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -39439,7 +39725,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -39463,7 +39749,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -39525,7 +39811,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -39553,7 +39839,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "url": {
                     "type": "string",
@@ -39593,7 +39879,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "fee_amount": {
                     "type": "integer",
@@ -39609,7 +39895,7 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:01:00"
+                    "example": "2026-05-13T12:01:00Z"
                 },
                 "payment_no": {
                     "type": "string",
@@ -39756,11 +40042,11 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "expires_at": {
                     "type": "string",
-                    "example": "2026-12-31 23:59:59"
+                    "example": "2026-12-31T23:59:59Z"
                 },
                 "id": {
                     "type": "integer",
@@ -39772,7 +40058,7 @@
                 },
                 "last_used_at": {
                     "type": "string",
-                    "example": "2025-06-01 12:00:00"
+                    "example": "2025-06-01T12:00:00Z"
                 },
                 "name": {
                     "type": "string",
@@ -39937,7 +40223,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -40143,7 +40429,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "fingerprint": {
                     "type": "string",
@@ -40288,7 +40574,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -40321,7 +40607,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -40367,7 +40653,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-05-20 12:00:00"
+                    "example": "2025-05-20T12:00:00Z"
                 },
                 "fee_amount": {
                     "type": "integer",
@@ -40383,7 +40669,7 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2025-05-20 12:01:00"
+                    "example": "2025-05-20T12:01:00Z"
                 },
                 "payment_no": {
                     "type": "string",
@@ -40450,7 +40736,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "device_name": {
                     "type": "string",
@@ -40487,7 +40773,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -40631,13 +40917,33 @@
                     "type": "boolean",
                     "example": true
                 },
+                "coupon_code": {
+                    "type": "string",
+                    "example": "VIP50"
+                },
+                "coupon_discount_monthly": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "coupon_discount_quarterly": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "coupon_discount_yearly": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "coupon_id": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "cpu": {
                     "type": "number",
                     "example": 2
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "default_user": {
                     "type": "string",
@@ -40653,7 +40959,7 @@
                 },
                 "expire_at": {
                     "type": "string",
-                    "example": "2026-12-31 23:59:59"
+                    "example": "2026-12-31T23:59:59Z"
                 },
                 "hostname": {
                     "type": "string",
@@ -40673,7 +40979,7 @@
                 },
                 "last_backup_at": {
                     "type": "string",
-                    "example": "2026-01-01 03:00:00"
+                    "example": "2026-01-01T03:00:00Z"
                 },
                 "memory": {
                     "type": "integer",
@@ -40727,8 +41033,8 @@
                     "example": false
                 },
                 "traffic_used": {
-                    "type": "integer",
-                    "example": 500
+                    "type": "number",
+                    "example": 500.25
                 },
                 "type": {
                     "type": "string",
@@ -40745,7 +41051,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-07-04 12:00:00"
+                    "example": "2026-07-04T12:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -40793,7 +41099,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-07-04 12:00:00"
+                    "example": "2026-07-04T12:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -40847,7 +41153,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "discount_amount": {
                     "type": "integer",
@@ -40877,15 +41183,15 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "period_end": {
                     "type": "string",
-                    "example": "2026-06-12 12:00:00"
+                    "example": "2026-06-12T12:00:00Z"
                 },
                 "period_start": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "plan_name": {
                     "type": "string",
@@ -40941,7 +41247,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "discount_amount": {
                     "type": "integer",
@@ -40961,15 +41267,15 @@
                 },
                 "paid_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "period_end": {
                     "type": "string",
-                    "example": "2026-06-12 12:00:00"
+                    "example": "2026-06-12T12:00:00Z"
                 },
                 "period_start": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "plan_name": {
                     "type": "string",
@@ -41047,7 +41353,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -41064,7 +41370,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -41089,7 +41395,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "dns1": {
                     "type": "string",
@@ -41122,11 +41428,11 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "finished_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:05"
+                    "example": "2026-01-01T00:00:05Z"
                 },
                 "id": {
                     "type": "integer",
@@ -41142,7 +41448,7 @@
                 },
                 "started_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:01"
+                    "example": "2026-01-01T00:00:01Z"
                 },
                 "status": {
                     "type": "string",
@@ -41159,7 +41465,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "department": {
                     "type": "string",
@@ -41179,7 +41485,7 @@
                 },
                 "last_reply_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "priority": {
                     "type": "integer",
@@ -41206,7 +41512,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "department": {
                     "type": "string",
@@ -41226,7 +41532,7 @@
                 },
                 "last_reply_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "priority": {
                     "type": "integer",
@@ -41284,7 +41590,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-05-13 12:00:00"
+                    "example": "2026-05-13T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -41309,7 +41615,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -41354,7 +41660,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -41615,7 +41921,7 @@
                 },
                 "expire_at": {
                     "type": "string",
-                    "example": "2026-10-01 00:00:00"
+                    "example": "2026-10-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -41648,7 +41954,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-09-02 00:00:00"
+                    "example": "2026-09-02T00:00:00Z"
                 },
                 "email_sent": {
                     "type": "boolean",
@@ -41656,7 +41962,7 @@
                 },
                 "expires_at": {
                     "type": "string",
-                    "example": "2026-09-05 00:00:00"
+                    "example": "2026-09-05T00:00:00Z"
                 },
                 "fee_amount": {
                     "type": "integer",
@@ -41783,7 +42089,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "fingerprint": {
                     "type": "string",
@@ -41910,6 +42216,15 @@
                 }
             }
         },
+        "portal.ToggleAutoRenewRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
         "portal.UpdateInvoiceProfileRequest": {
             "type": "object",
             "required": [
@@ -41977,7 +42292,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -41997,7 +42312,7 @@
                 },
                 "verified_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 }
             }
         },
@@ -42037,6 +42352,10 @@
                 "discount_amount": {
                     "type": "integer",
                     "example": 5000
+                },
+                "duration": {
+                    "type": "string",
+                    "example": "once"
                 },
                 "type": {
                     "type": "string",
@@ -42295,7 +42614,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -42340,7 +42659,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -43860,7 +44179,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 },
                 "hostname": {
                     "type": "string",
@@ -43884,7 +44203,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2026-01-01 00:00:00"
+                    "example": "2026-01-01T00:00:00Z"
                 }
             }
         },
@@ -43998,7 +44317,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -44064,7 +44383,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -45541,6 +45860,23 @@
                 }
             }
         },
+        "service.CouponBoundInstance": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "service.DetectedNetwork": {
             "type": "object",
             "properties": {
@@ -46371,6 +46707,40 @@
                 }
             }
         },
+        "service.SyncIPv6NICResult": {
+            "type": "object",
+            "properties": {
+                "converted": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "vm-abc-1: 获取实例信息失败"
+                    ]
+                },
+                "failed": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "need_restart": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "skipped": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
         "service.TestConnectionResponse": {
             "type": "object",
             "properties": {
@@ -46582,11 +46952,11 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "finished_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:01:00"
+                    "example": "2025-01-01T00:01:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -46618,7 +46988,7 @@
                 },
                 "started_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:30"
+                    "example": "2025-01-01T00:00:30Z"
                 },
                 "status": {
                     "type": "string",
@@ -46683,7 +47053,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -46707,7 +47077,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -46792,7 +47162,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -46820,7 +47190,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 }
             }
         },
@@ -46943,7 +47313,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -46996,11 +47366,11 @@
                 },
                 "closed_at": {
                     "type": "string",
-                    "example": "2025-01-02 00:00:00"
+                    "example": "2025-01-02T00:00:00Z"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "department": {
                     "type": "string",
@@ -47008,7 +47378,7 @@
                 },
                 "first_response_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:30:00"
+                    "example": "2025-01-01T00:30:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -47032,7 +47402,7 @@
                 },
                 "last_reply_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "priority": {
                     "type": "integer",
@@ -47046,7 +47416,7 @@
                 },
                 "sla_deadline": {
                     "type": "string",
-                    "example": "2025-01-01 13:00:00"
+                    "example": "2025-01-01T13:00:00Z"
                 },
                 "status": {
                     "type": "string",
@@ -47079,11 +47449,11 @@
                 },
                 "closed_at": {
                     "type": "string",
-                    "example": "2025-01-02 00:00:00"
+                    "example": "2025-01-02T00:00:00Z"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "department": {
                     "type": "string",
@@ -47091,7 +47461,7 @@
                 },
                 "first_response_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:30:00"
+                    "example": "2025-01-01T00:30:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -47107,7 +47477,7 @@
                 },
                 "last_reply_at": {
                     "type": "string",
-                    "example": "2025-01-01 12:00:00"
+                    "example": "2025-01-01T12:00:00Z"
                 },
                 "priority": {
                     "type": "integer",
@@ -47119,7 +47489,7 @@
                 },
                 "sla_deadline": {
                     "type": "string",
-                    "example": "2025-01-01 13:00:00"
+                    "example": "2025-01-01T13:00:00Z"
                 },
                 "status": {
                     "type": "string",
@@ -47203,7 +47573,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "id": {
                     "type": "integer",
@@ -47390,7 +47760,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -47418,7 +47788,7 @@
                 },
                 "kyc_verified_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "parent_id": {
                     "type": "integer",
@@ -47446,7 +47816,7 @@
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "username": {
                     "type": "string",
@@ -47463,7 +47833,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "email": {
                     "type": "string",
@@ -47512,7 +47882,7 @@
                 },
                 "nearest_expire_at": {
                     "type": "string",
-                    "example": "2026-07-01 00:00:00"
+                    "example": "2026-07-01T00:00:00Z"
                 },
                 "open_ticket_count": {
                     "type": "integer",
@@ -47577,7 +47947,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "device_name": {
                     "type": "string",
@@ -47724,7 +48094,7 @@
             "properties": {
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -47753,7 +48123,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -47798,7 +48168,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "dns1": {
                     "type": "string",
@@ -47841,7 +48211,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
@@ -47906,7 +48276,7 @@
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2025-01-01 00:00:00"
+                    "example": "2025-01-01T00:00:00Z"
                 },
                 "description": {
                     "type": "string",
